@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>ICU Bed Occupancy Dashboard</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+
+
+<body>
+
+
+<div class="container">
+
+
+    <!-- ==================================================
+         HEADER
+    =================================================== -->
+
+    <header>
+
+        <h1>
+            ICU Bed Occupancy Dashboard
+        </h1>
+
+        <p>
+            Hospital Administration - Live ICU Bed Monitoring
+        </p>
+
+    </header>
+
+
+
+    <!-- ==================================================
+         DASHBOARD CARDS
+    =================================================== -->
+
+    <section class="dashboard">
+
+
+        <div class="card total">
+
+            <h3>
+                Total Beds
+            </h3>
+
+            <strong id="totalBeds">
+                35
+            </strong>
+
+        </div>
+
+
+        <div class="card occupied">
+
+            <h3>
+                Occupied
+            </h3>
+
+            <strong id="occupiedBeds">
+                0
+            </strong>
+
+        </div>
+
+
+        <div class="card available">
+
+            <h3>
+                Available
+            </h3>
+
+            <strong id="availableBeds">
+                0
+            </strong>
+
+        </div>
+
+
+        <div class="card occupancy">
+
+            <h3>
+                Occupancy
+            </h3>
+
+            <strong id="occupancy">
+                0%
+            </strong>
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- ==================================================
+         BED VISUALIZATION
+    =================================================== -->
+
+    <section class="panel">
+
+
+        <div class="section-title">
+
+
+            <div>
+
+                <h2>
+                    Live ICU Bed Status
+                </h2>
+
+                <p>
+                    Green = Available &nbsp; | &nbsp;
+                    Red = Occupied
+                </p>
+
+            </div>
+
+
+            <div class="legend">
+
+                <span>
+
+                    <i class="available-dot"></i>
+
+                    Available
+
+                </span>
+
+
+                <span>
+
+                    <i class="occupied-dot"></i>
+
+                    Occupied
+
+                </span>
+
+            </div>
+
+
+        </div>
+
+
+        <div id="bedVisualization"></div>
+
+
+    </section>
+
+
+
+    <!-- ==================================================
+         PATIENT ADMISSION
+    =================================================== -->
+
+    <section class="panel">
+
+
+        <h2>
+            Patient Admission
+        </h2>
+
+
+        <form id="admitForm">
+
+
+            <div class="form-grid">
+
+
+                <div>
+
+                    <label>
+                        Patient ID
+                    </label>
+
+                    <input
+                        type="text"
+                        id="patient_id"
+                        placeholder="P004"
+                        required
+                    >
+
+                </div>
+
+
+                <div>
+
+                    <label>
+                        Patient Name
+                    </label>
+
+                    <input
+                        type="text"
+                        id="patient_name"
+                        placeholder="Patient name"
+                        required
+                    >
+
+                </div>
+
+
+                <div>
+
+                    <label>
+                        Ward
+                    </label>
+
+                    <select
+                        id="ward"
+                        required
+                    >
+
+                        <option value="">
+                            Select Ward
+                        </option>
+
+                        <option value="ICU-A">
+                            ICU-A
+                        </option>
+
+                        <option value="ICU-B">
+                            ICU-B
+                        </option>
+
+                        <option value="ICU-C">
+                            ICU-C
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div>
+
+                    <label>
+                        Bed Number
+                    </label>
+
+                    <select
+                        id="bed_number"
+                        required
+                    >
+
+                        <option value="">
+                            Select available bed
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div>
+
+                    <label>
+                        Admission Time
+                    </label>
+
+                    <input
+                        type="datetime-local"
+                        id="admission_time"
+                        required
+                    >
+
+                </div>
+
+
+                <div>
+
+                    <label>
+                        Planned Discharge Time
+                    </label>
+
+                    <input
+                        type="datetime-local"
+                        id="discharge_time"
+                        required
+                    >
+
+                </div>
+
+
+            </div>
+
+
+            <button type="submit">
+
+                Admit Patient
+
+            </button>
+
+
+        </form>
+
+
+        <p id="message"></p>
+
+
+    </section>
+
+
+
+    <!-- ==================================================
+         NEXT-DAY DISCHARGE FORECAST
+    =================================================== -->
+
+    <section class="panel">
+
+
+        <div class="forecast-header">
+
+            <div>
+
+                <h2>
+                    Next-Day Discharge Forecast
+                </h2>
+
+                <p id="forecastPeriod">
+                    Loading forecast...
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="chart-container">
+
+            <canvas id="forecastChart"></canvas>
+
+        </div>
+
+
+        <h3 class="forecast-patient-title">
+
+            Patients Scheduled for Discharge
+
+        </h3>
+
+
+        <div class="table-container">
+
+
+            <table>
+
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Patient ID
+                        </th>
+
+                        <th>
+                            Patient Name
+                        </th>
+
+                        <th>
+                            Ward
+                        </th>
+
+                        <th>
+                            Bed
+                        </th>
+
+                        <th>
+                            Planned Discharge
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody id="forecastPatientTable">
+
+                </tbody>
+
+
+            </table>
+
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- ==================================================
+         WARD STATUS
+    =================================================== -->
+
+    <section class="panel">
+
+
+        <h2>
+            Ward Status
+        </h2>
+
+
+        <table>
+
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        Ward
+                    </th>
+
+                    <th>
+                        Total Beds
+                    </th>
+
+                    <th>
+                        Occupied
+                    </th>
+
+                    <th>
+                        Available
+                    </th>
+
+                    <th>
+                        Occupancy
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody id="wardTable">
+
+            </tbody>
+
+
+        </table>
+
+
+    </section>
+
+
+
+    <!-- ==================================================
+         PATIENT RECORDS
+    =================================================== -->
+
+    <section class="panel">
+
+
+        <h2>
+            Patient Records
+        </h2>
+
+
+        <div class="table-container">
+
+
+            <table>
+
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            ID
+                        </th>
+
+                        <th>
+                            Patient ID
+                        </th>
+
+                        <th>
+                            Patient Name
+                        </th>
+
+                        <th>
+                            Ward
+                        </th>
+
+                        <th>
+                            Bed
+                        </th>
+
+                        <th>
+                            Admission Time
+                        </th>
+
+                        <th>
+                            Planned Discharge
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody id="patientTable">
+
+                </tbody>
+
+
+            </table>
+
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- ==================================================
+         UPDATE PATIENT MODAL
+    =================================================== -->
+
+    <div
+        id="editModal"
+        class="modal"
+    >
+
+
+        <div class="modal-content">
+
+
+            <h2>
+                Update Patient
+            </h2>
+
+
+            <input
+                type="hidden"
+                id="editId"
+            >
+
+
+            <label>
+                Patient Name
+            </label>
+
+            <input
+                type="text"
+                id="editName"
+            >
+
+
+            <label>
+                Ward
+            </label>
+
+            <select id="editWard">
+
+                <option value="ICU-A">
+                    ICU-A
+                </option>
+
+                <option value="ICU-B">
+                    ICU-B
+                </option>
+
+                <option value="ICU-C">
+                    ICU-C
+                </option>
+
+            </select>
+
+
+            <label>
+                Bed Number
+            </label>
+
+            <select id="editBed">
+
+            </select>
+
+
+            <label>
+                Planned Discharge Time
+            </label>
+
+            <input
+                type="datetime-local"
+                id="editDischarge"
+            >
+
+
+            <div class="modal-buttons">
+
+
+                <button
+                    type="button"
+                    onclick="saveUpdate()"
+                >
+
+                    Save Changes
+
+                </button>
+
+
+                <button
+                    type="button"
+                    class="cancel"
+                    onclick="closeModal()"
+                >
+
+                    Cancel
+
+                </button>
+
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+
+<script
+    src="{{ url_for('static', filename='script.js') }}"
+></script>
+
+
+</body>
+
+</html>
